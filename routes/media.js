@@ -15,7 +15,7 @@ router.post("/", function (req, res, next) {
     }
     base64Img.img(
         image,
-        "/public/images",
+        "./public/images",
         Date.now(),
         async (err, filepath) => {
             //
