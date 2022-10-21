@@ -2,7 +2,7 @@ const isBase64 = require("is-base64");
 const base64Img = require("base64-img");
 const { Media } = require("../models");
 const fs = require("fs");
-const { ERROR, SUCCESS } = require("../helper/ResponseFormatter");
+const { ERROR, SUCCESS } = require("../helpers/ResponseFormatter");
 
 function post(req, res, next) {
     const { image } = req.body;
@@ -16,7 +16,7 @@ function post(req, res, next) {
         async (err, filepath) => {
             //
             if (err) {
-                return ERROR(400, "Bad Request", err.message);
+                return ERROR(res, 400, "Bad Request", err.message);
             }
             const newFilepath = filepath.replaceAll(/\\/g, "/");
 
@@ -29,15 +29,16 @@ function post(req, res, next) {
 
                 if (!media) {
                     return ERROR(
+                        res,
                         400,
                         "Bad Request",
                         "Error occur while creating new resource."
                     );
                 }
                 media.image = `${req.get("host")}/${media.image}`;
-                return SUCCESS(200, "OK", media);
+                return SUCCESS(res, 200, "OK", media);
             } catch (err) {
-                return ERROR(err.status, err.message, err.message);
+                return ERROR(res, err.status, err.message, err.message);
             }
         }
     );
@@ -51,7 +52,7 @@ async function findAll(req, res, next) {
         });
 
         if (!result) {
-            return ERROR(500, "Error occur while getting data");
+            return ERROR(res, 500, "Error occur while getting data");
         }
 
         const mappedMedia = result.map((m) => {
@@ -59,9 +60,9 @@ async function findAll(req, res, next) {
             return m;
         });
 
-        return SUCCESS(200, "Getting data successfull", mappedMedia);
+        return SUCCESS(res, 200, "Getting data successfull", mappedMedia);
     } catch (error) {
-        return ERROR(error.status, error.message, error.message);
+        return ERROR(res, error.status, error.message, error.message);
     }
 }
 
@@ -72,27 +73,29 @@ async function destroy(req, res, next) {
         const result = await Media.findByPk(id);
 
         if (!result) {
-            return ERROR(404, "NOT FOUND", "Media not found with this id");
+            return ERROR(res, 404, "NOT FOUND", "Media not found with this id");
         }
 
         fs.unlink(`./public/${result.image}`, async (err) => {
             if (err) {
-                return ERROR(err.code ?? 500, err.message, err.message);
+                return ERROR(res, err.code ?? 500, err.message, err.message);
             }
 
             const deleted = await result.destroy();
 
             if (!deleted) {
                 return ERROR(
+                    res,
                     err.code ?? 500,
                     "Internal Server Error",
                     "Error while deleting data"
                 );
             }
-            return SUCCESS(200, "Delete data successfully", null);
+            return SUCCESS(res, 200, "Delete data successfully", null);
         });
     } catch (error) {
         return ERROR(
+            res,
             error.status ?? 500,
             error.message ?? "Internal server error",
             error.data ?? null

@@ -1,4 +1,4 @@
-const SUCCESS = (code = 500, message, data = null) => {
+const SUCCESS = (res, code = 500, message, data = null) => {
     return res.status(500).json({
         meta: {
             success: true,
@@ -9,7 +9,7 @@ const SUCCESS = (code = 500, message, data = null) => {
     });
 };
 
-const ERROR = (code, message, errors = null) => {
+const ERROR = (res, code, message, errors = null) => {
     return res.status(code).json({
         meta: {
             success: false,

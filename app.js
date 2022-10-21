@@ -6,7 +6,7 @@ const logger = require("morgan");
 const cors = require("cors");
 const indexRouter = require("./routes/index");
 const mediaRouter = require("./routes/media");
-const { ERROR } = require("./helper/ResponseFormatter");
+const { ERROR } = require("./helpers/ResponseFormatter");
 const app = express();
 
 app.use(logger("dev"));
