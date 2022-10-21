@@ -1,13 +1,13 @@
 require("dotenv").config();
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 const cors = require("cors");
-var indexRouter = require("./routes/index");
-var mediaRouter = require("./routes/media");
-
-var app = express();
+const indexRouter = require("./routes/index");
+const mediaRouter = require("./routes/media");
+const { ERROR } = require("./helper/ResponseFormatter");
+const app = express();
 
 app.use(logger("dev"));
 app.use(express.json({ limit: "45mb" }));
@@ -21,7 +21,7 @@ app.use("/media", mediaRouter);
 
 //add default error for not found endpoint
 app.use((req, res, next) => {
-    const error = new Error("Not Found");
+    const error = new Error("NOT FOUND");
     error.status = 404;
     next(error);
 });
@@ -29,16 +29,10 @@ app.use((req, res, next) => {
 //add default error handling
 app.use((error, req, res, next) => {
     //
-    const statusCode = error.status || 500;
-    const status = false;
+    const statusCode = error.status ?? 500;
     const message = error.message;
-    const data = error.data || null;
-
-    return res.status(statusCode).json({
-        status,
-        message,
-        data,
-    });
+    const errors = error.data ?? null;
+    return ERROR(statusCode, message, errors);
 });
 
 module.exports = app;

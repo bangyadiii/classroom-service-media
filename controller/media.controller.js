@@ -2,15 +2,12 @@ const isBase64 = require("is-base64");
 const base64Img = require("base64-img");
 const { Media } = require("../models");
 const fs = require("fs");
+const { ERROR, SUCCESS } = require("../helper/ResponseFormatter");
 
 function post(req, res, next) {
-    //
     const { image } = req.body;
     if (!isBase64(image, { mimeRequired: true })) {
-        //
-        const error = new Error("invalid base64 images");
-        error.status = 400;
-        return next(error);
+        return ERROR(415, "Unsupported Media Type.", "Invalid base64 images");
     }
     base64Img.img(
         image,
@@ -19,13 +16,11 @@ function post(req, res, next) {
         async (err, filepath) => {
             //
             if (err) {
-                const error = new Error(err.message);
-                error.status = 400;
-                next(error);
+                return ERROR(400, "Bad Request", err.message);
             }
-            newFilepath = filepath.replaceAll(/\\/g, "/");
+            const newFilepath = filepath.replaceAll(/\\/g, "/");
 
-            filename = newFilepath.split("/").pop();
+            const filename = newFilepath.split("/").pop();
 
             try {
                 const media = await Media.create({
@@ -33,18 +28,16 @@ function post(req, res, next) {
                 });
 
                 if (!media) {
-                    const error = new Error(media);
-                    error.status = 400;
-                    next(error);
+                    return ERROR(
+                        400,
+                        "Bad Request",
+                        "Error occur while creating new resource."
+                    );
                 }
                 media.image = `${req.get("host")}/${media.image}`;
-                return res.status(200).json({
-                    success: true,
-                    message: "Berhasil upload gambar.",
-                    data: media,
-                });
+                return SUCCESS(200, "OK", media);
             } catch (err) {
-                next(err);
+                return ERROR(err.status, err.message, err.message);
             }
         }
     );
@@ -58,26 +51,17 @@ async function findAll(req, res, next) {
         });
 
         if (!result) {
-            return res.status(500).json({
-                success: false,
-                message: "Error occur while getting data.",
-                data: null,
-            });
+            return ERROR(500, "Error occur while getting data");
         }
 
         const mappedMedia = result.map((m) => {
-            //
             m.image = `${req.get("host")}/${m.image}`;
             return m;
         });
 
-        res.status(200).json({
-            success: true,
-            message: "Get data successful.",
-            data: mappedMedia,
-        });
+        return SUCCESS(200, "Getting data successfull", mappedMedia);
     } catch (error) {
-        next(error);
+        return ERROR(error.status, error.message, error.message);
     }
 }
 
@@ -88,37 +72,31 @@ async function destroy(req, res, next) {
         const result = await Media.findByPk(id);
 
         if (!result) {
-            return res.status(400).json({
-                success: false,
-                message: "No data with that id.",
-                data: null,
-            });
+            return ERROR(404, "NOT FOUND", "Media not found with this id");
         }
 
         fs.unlink(`./public/${result.image}`, async (err) => {
             if (err) {
-                const error = new Error("Media not found.");
-                error.status = 500;
-                next(error);
+                return ERROR(err.code ?? 500, err.message, err.message);
             }
 
             const deleted = await result.destroy();
 
             if (!deleted) {
-                return res.status(500).json({
-                    success: false,
-                    message: "Error while delete data.",
-                    data: null,
-                });
+                return ERROR(
+                    err.code ?? 500,
+                    "Internal Server Error",
+                    "Error while deleting data"
+                );
             }
-            return res.status(200).json({
-                success: true,
-                message: "Delete data successfully",
-                data: null,
-            });
+            return SUCCESS(200, "Delete data successfully", null);
         });
     } catch (error) {
-        next(error);
+        return ERROR(
+            error.status ?? 500,
+            error.message ?? "Internal server error",
+            error.data ?? null
+        );
     }
 }
 
