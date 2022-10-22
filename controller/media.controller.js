@@ -38,7 +38,7 @@ function post(req, res, next) {
                 media.image = `${req.get("host")}/${media.image}`;
                 return SUCCESS(res, 200, "OK", media);
             } catch (err) {
-                return ERROR(res, err.status, err.message, err.message);
+                return ERROR(res, err.code || 500, err.message, err.message);
             }
         }
     );
