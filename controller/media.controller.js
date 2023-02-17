@@ -7,7 +7,12 @@ const { ERROR, SUCCESS } = require("../helpers/ResponseFormatter");
 function post(req, res, next) {
     const { image } = req.body;
     if (!isBase64(image, { mimeRequired: true })) {
-        return ERROR(415, "Unsupported Media Type.", "Invalid base64 images");
+        return ERROR(
+            res,
+            415,
+            "Unsupported Media Type.",
+            "Invalid base64 images"
+        );
     }
     base64Img.img(
         image,
